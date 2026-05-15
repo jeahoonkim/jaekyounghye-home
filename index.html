@@ -8,9 +8,11 @@
     <!-- PWA: 홈 화면에 앱처럼 설치 가능 -->
     <link rel="manifest" href="manifest.json" />
     <link rel="icon" type="image/svg+xml" href="icon.svg" />
-    <meta name="theme-color" content="#2c5d8a" />
+    <link rel="apple-touch-icon" href="icon.svg" />
+    <meta name="theme-color" content="#1A1F26" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="재경혜" />
 
     <link rel="preconnect" href="https://cdn.jsdelivr.net" />
@@ -665,6 +667,21 @@
       }
       const root = ReactDOM.createRoot(document.getElementById('root'));
       root.render(<App />);
+    </script>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         PWA 서비스워커 등록
+         - 등록되면 휴대폰에서 "홈 화면에 추가" 시 앱처럼 전체화면 실행
+         - 위치는 같은 폴더의 service-worker.js
+         ═══════════════════════════════════════════════════════════ -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./service-worker.js')
+            .then((reg) => console.log('[PWA] 서비스워커 등록 성공', reg.scope))
+            .catch((err) => console.warn('[PWA] 서비스워커 등록 실패', err));
+        });
+      }
     </script>
   </body>
 </html>
