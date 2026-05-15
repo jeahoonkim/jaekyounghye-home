@@ -47,7 +47,7 @@
       * { box-sizing: border-box; }
       button { font-family: inherit; }
 
-      /* ════════════ Variant B — 시간대별 테마 + 시네마틱 ════════════ */
+      /* Variant B - time-of-day theme + cinematic */
       .glass-screen {
         position: relative;
         width: 100%; height: 100%;
@@ -59,7 +59,6 @@
         --vignette-color: rgba(0,0,0,0.55);
         --particle-color: rgba(255,250,230,0.85);
       }
-      /* 새벽 아침 (5-10) */
       .glass-screen[data-theme="dawn"] {
         background: linear-gradient(180deg, #FFD9A8 0%, #FF9D7E 55%, #C97264 100%);
         --tint-a: rgba(255,200,140,0.4);
@@ -68,7 +67,6 @@
         --vignette-color: rgba(80,30,40,0.45);
         --particle-color: rgba(255,230,200,0.9);
       }
-      /* 낮 — 푸른 녹지 (10-17) */
       .glass-screen[data-theme="day"] {
         background: linear-gradient(180deg, #C5E0E2 0%, #8FBFAA 55%, #5A8B7D 100%);
         --tint-a: rgba(180,220,180,0.4);
@@ -77,7 +75,6 @@
         --vignette-color: rgba(20,50,50,0.4);
         --particle-color: rgba(245,255,235,0.95);
       }
-      /* 노을 (17-21) */
       .glass-screen[data-theme="dusk"] {
         background: linear-gradient(180deg, #F0A66B 0%, #D7585C 50%, #663A6B 100%);
         --tint-a: rgba(255,180,100,0.4);
@@ -86,7 +83,6 @@
         --vignette-color: rgba(40,20,50,0.5);
         --particle-color: rgba(255,220,180,0.95);
       }
-      /* 깊은 밤 (21-5) — 기본 */
       .glass-screen[data-theme="night"] {
         background: linear-gradient(180deg, #2A3340 0%, #44556A 100%);
         --tint-a: rgba(255,200,120,0.30);
@@ -104,7 +100,6 @@
         25%  { opacity: 0.6; }
         100% { filter: blur(0) brightness(1); opacity: 1; }
       }
-      /* 앞 줄 — Ken Burns + 인트로 스케일 교차 */
       .glass-bg-zoom {
         width: 100%; height: 100%;
         will-change: transform, filter;
@@ -138,7 +133,6 @@
         40%  { opacity: 0.5; }
         100% { opacity: 1; }
       }
-      /* 초기진입 검정 커튼 */
       .glass-curtain {
         position: absolute; inset: 0; z-index: 20;
         background: #000;
@@ -151,7 +145,6 @@
         60%  { opacity: 0.25; }
         100% { opacity: 0; }
       }
-      /* 렌즈 플레어 — 그라데이션 스트릭이 화면 가로지르며 스윕 */
       .lens-flare {
         position: absolute;
         top: -20%; left: -50%;
@@ -181,7 +174,6 @@
         80%  { opacity: 0.5; }
         100% { transform: translateX(60%); opacity: 0; }
       }
-      /* Bokeh 입자 */
       .particles {
         position: absolute; inset: 0;
         z-index: 2;
@@ -209,7 +201,6 @@
         90%  { opacity: 1; }
         100% { transform: translate(var(--drift), -820px); opacity: 0; }
       }
-      /* 비네트 — 호흡 */
       .vignette {
         position: absolute; inset: 0;
         z-index: 3;
@@ -284,7 +275,6 @@
         overflow: hidden;
         transition: transform 0.2s ease;
       }
-      /* 카드 안쪽에 천천히 색이 흐르는 글로우 */
       .glass-row::before {
         content: '';
         position: absolute;
@@ -337,7 +327,7 @@
         margin-left: 4px;
       }
 
-      /* ════════════ 폰 프레임 ════════════ */
+      /* phone shell */
       .phone-shell {
         position: relative;
         width: 390px;
@@ -392,13 +382,10 @@
     ></script>
 
     <script type="text/babel">
-      // ═══════════════════════════════════════════════════════════
-      // GlassHome — 첫 화면 (시간대별 테마 + 시네마틱 효과)
+      // GlassHome - 첫 화면 (시간대별 테마 + 시네마틱 효과)
       // 원본: variant-glass.jsx (인라인으로 합침)
-      // ═══════════════════════════════════════════════════════════
       const { useState, useEffect, useRef, useMemo } = React;
 
-      // 시간대별 인사말
       function getGreeting(now = new Date()) {
         const h = now.getHours();
         const buckets = {
@@ -421,7 +408,6 @@
         return { text: list[day % list.length], bucket: key };
       }
 
-      // 시간대별 테마
       function getTheme(now = new Date()) {
         const h = now.getHours();
         if (h >= 5  && h < 10) return 'dawn';
@@ -435,31 +421,51 @@
         const greeting = useMemo(() => getGreeting(), []);
         const theme = useMemo(() => getTheme(), []);
 
-        // ─── 두 외부 사이트 연동 ───────────────────────────────
+        // 두 외부 사이트 연동
+        // 아이콘: SVG (영어=A, 가족=집)
+        // tint: 그라데이션 (background CSS는 gradient 문자열 그대로 지원)
         const items = [
           {
             id: 'english',
             title: '혜원이 영어 놀이터',
             sub: 'English Playground',
             url: 'https://hyewon-english.pages.dev/',
-            tint: '#7CB7DF',
+            tint: 'linear-gradient(135deg, #4FA8FF 0%, #1E5FD9 100%)',
             glowA: 'rgba(120,200,240,0.45)',
             glowB: 'rgba(255,200,150,0.35)',
-            icon: 'A',
+            icon: (
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M5 19L9.5 6h5L19 19M7.5 14h9"
+                  stroke="white"
+                  strokeWidth="2.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  opacity="0.98"
+                />
+              </svg>
+            ),
           },
           {
             id: 'family',
             title: '재경혜 홈페이지',
             sub: 'Family Home',
             url: 'https://jkhphoto.netlify.app/',
-            tint: '#E8A89A',
+            tint: 'linear-gradient(135deg, #FF8A6B 0%, #D14841 100%)',
             glowA: 'rgba(255,180,160,0.45)',
             glowB: 'rgba(180,150,255,0.30)',
-            icon: '🏠',
+            icon: (
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M4 11.5L12 4l8 7.5V20a1 1 0 01-1 1h-4v-6h-6v6H5a1 1 0 01-1-1v-8.5z"
+                  fill="white"
+                  opacity="0.98"
+                />
+              </svg>
+            ),
           },
         ];
 
-        // 안전망: 애니메이션이 막힌 환경에서도 표시되도록
         useEffect(() => {
           const t = setTimeout(() => {
             document.querySelectorAll('.glass-row').forEach((el) => {
@@ -472,7 +478,6 @@
 
         return (
           <div className="glass-screen" data-theme={theme}>
-            {/* 배경 그라데이션 (테마별 자동 변경) + 인트로 줌 */}
             <div className="glass-bg-wrap">
               <div className="glass-bg-zoom">
                 <div className="image-slot" />
@@ -480,16 +485,12 @@
               <div className="glass-bg-tint" />
             </div>
 
-            {/* Bokeh 빛 입자 */}
             <Particles count={20} />
 
-            {/* 비네트 (호흡) */}
             <div className="vignette" />
 
-            {/* 렌즈 플레어 스윕 (인트로) */}
             <div className="lens-flare" />
 
-            {/* 검정 첫 진입 커튼 */}
             <div className="glass-curtain" ref={(el) => {
               if (el && !el.dataset.armed) {
                 el.dataset.armed = '1';
@@ -498,7 +499,6 @@
               }
             }} />
 
-            {/* 컨텐츠 */}
             <div className="glass-content">
               <div className="glass-eyebrow">JAE KYOUNG HYE</div>
 
@@ -529,7 +529,7 @@
                     onPointerLeave={() => setPressed(null)}
                   >
                     <div className="glass-row__avatar" style={{ background: it.tint }}>
-                      <span>{it.icon}</span>
+                      {it.icon}
                     </div>
                     <div className="glass-row__body">
                       <div className="glass-row__title">{it.title}</div>
@@ -544,7 +544,6 @@
         );
       }
 
-      // Bokeh 입자 — 작은 빛 입자가 위로 흐름
       function Particles({ count = 20 }) {
         const particles = useMemo(() => {
           return Array.from({ length: count }).map((_, i) => {
@@ -584,7 +583,6 @@
         );
       }
 
-      // 제목 — 글자 단위로 페이드인
       function RevealTitle({ text, startDelay = 0.85, perChar = 0.085 }) {
         const chars = [...text];
         const [mounted, setMounted] = useState(false);
@@ -613,7 +611,6 @@
         );
       }
 
-      // 부제 — 통째로 페이드인
       function RevealText({ text, delay = 0, duration = 0.6 }) {
         const [mounted, setMounted] = useState(false);
         useEffect(() => {
@@ -634,9 +631,7 @@
         );
       }
 
-      // ═══════════════════════════════════════════════════════════
       // 폰 프레임 안에 GlassHome을 넣어서 렌더
-      // ═══════════════════════════════════════════════════════════
       function App() {
         return (
           <div className="phone-shell">
@@ -669,11 +664,7 @@
       root.render(<App />);
     </script>
 
-    <!-- ═══════════════════════════════════════════════════════════
-         PWA 서비스워커 등록
-         - 등록되면 휴대폰에서 "홈 화면에 추가" 시 앱처럼 전체화면 실행
-         - 위치는 같은 폴더의 service-worker.js
-         ═══════════════════════════════════════════════════════════ -->
+    <!-- PWA 서비스워커 등록 -->
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
