@@ -1,0 +1,20 @@
+{
+  "name": "재경혜 홈페이지",
+  "short_name": "재경혜",
+  "description": "우리 가족만의 작은 갤러리",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "lang": "ko",
+  "background_color": "#fefcfa",
+  "theme_color": "#2c5d8a",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

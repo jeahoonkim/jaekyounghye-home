@@ -1,0 +1,670 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>재경혜 홈</title>
+
+    <!-- PWA: 홈 화면에 앱처럼 설치 가능 -->
+    <link rel="manifest" href="manifest.json" />
+    <link rel="icon" type="image/svg+xml" href="icon.svg" />
+    <meta name="theme-color" content="#2c5d8a" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="재경혜" />
+
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css"
+    />
+
+    <style>
+      @font-face {
+        font-family: 'Galmuri11';
+        src: url('https://cdn.jsdelivr.net/gh/quiple/galmuri/dist/Galmuri11.woff2') format('woff2');
+        font-weight: 400; font-display: swap;
+      }
+      @font-face {
+        font-family: 'Galmuri11';
+        src: url('https://cdn.jsdelivr.net/gh/quiple/galmuri/dist/Galmuri11-Bold.woff2') format('woff2');
+        font-weight: 700; font-display: swap;
+      }
+
+      :root {
+        --pixel: 'Galmuri11', monospace;
+        --ui: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      }
+      html, body { margin: 0; padding: 0; background: #1A1F26; min-height: 100vh; }
+      body {
+        font-family: var(--ui);
+        -webkit-font-smoothing: antialiased;
+        display: flex; align-items: center; justify-content: center;
+        padding: 16px 12px;
+      }
+      * { box-sizing: border-box; }
+      button { font-family: inherit; }
+
+      /* ════════════ Variant B — 시간대별 테마 + 시네마틱 ════════════ */
+      .glass-screen {
+        position: relative;
+        width: 100%; height: 100%;
+        overflow: hidden;
+        background: linear-gradient(180deg, #3A4A5A 0%, #5B6B7C 100%);
+        --tint-a: rgba(255,200,120,0.35);
+        --tint-b: rgba(70,120,170,0.45);
+        --tint-bottom: rgba(20,30,50,0.5);
+        --vignette-color: rgba(0,0,0,0.55);
+        --particle-color: rgba(255,250,230,0.85);
+      }
+      /* 새벽 아침 (5-10) */
+      .glass-screen[data-theme="dawn"] {
+        background: linear-gradient(180deg, #FFD9A8 0%, #FF9D7E 55%, #C97264 100%);
+        --tint-a: rgba(255,200,140,0.4);
+        --tint-b: rgba(255,140,110,0.4);
+        --tint-bottom: rgba(140,60,60,0.35);
+        --vignette-color: rgba(80,30,40,0.45);
+        --particle-color: rgba(255,230,200,0.9);
+      }
+      /* 낮 — 푸른 녹지 (10-17) */
+      .glass-screen[data-theme="day"] {
+        background: linear-gradient(180deg, #C5E0E2 0%, #8FBFAA 55%, #5A8B7D 100%);
+        --tint-a: rgba(180,220,180,0.4);
+        --tint-b: rgba(80,150,170,0.45);
+        --tint-bottom: rgba(30,70,70,0.35);
+        --vignette-color: rgba(20,50,50,0.4);
+        --particle-color: rgba(245,255,235,0.95);
+      }
+      /* 노을 (17-21) */
+      .glass-screen[data-theme="dusk"] {
+        background: linear-gradient(180deg, #F0A66B 0%, #D7585C 50%, #663A6B 100%);
+        --tint-a: rgba(255,180,100,0.4);
+        --tint-b: rgba(180,80,140,0.45);
+        --tint-bottom: rgba(50,30,70,0.45);
+        --vignette-color: rgba(40,20,50,0.5);
+        --particle-color: rgba(255,220,180,0.95);
+      }
+      /* 깊은 밤 (21-5) — 기본 */
+      .glass-screen[data-theme="night"] {
+        background: linear-gradient(180deg, #2A3340 0%, #44556A 100%);
+        --tint-a: rgba(255,200,120,0.30);
+        --tint-b: rgba(70,120,170,0.45);
+        --tint-bottom: rgba(10,15,30,0.55);
+        --vignette-color: rgba(0,0,0,0.6);
+        --particle-color: rgba(255,250,230,0.85);
+      }
+      .glass-bg-wrap {
+        position: absolute; inset: 0; z-index: 0; overflow: hidden;
+        animation: bgFadeIn 2.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+      }
+      @keyframes bgFadeIn {
+        0%   { filter: blur(0) brightness(0.25); opacity: 0; }
+        25%  { opacity: 0.6; }
+        100% { filter: blur(0) brightness(1); opacity: 1; }
+      }
+      /* 앞 줄 — Ken Burns + 인트로 스케일 교차 */
+      .glass-bg-zoom {
+        width: 100%; height: 100%;
+        will-change: transform, filter;
+        animation:
+          bgZoomIntro 2.6s cubic-bezier(0.16, 1, 0.3, 1) both,
+          kenBurns 26s ease-in-out 2.6s infinite alternate;
+      }
+      @keyframes bgZoomIntro {
+        0%   { transform: scale(1.55) translate(0,0); filter: blur(110px) saturate(2); }
+        100% { transform: scale(1.18) translate(0,0); filter: blur(28px) saturate(1.2); }
+      }
+      @keyframes kenBurns {
+        0%   { transform: scale(1.18) translate(0%, 0%); filter: blur(28px) saturate(1.2); }
+        50%  { transform: scale(1.24) translate(-3%, -2%); filter: blur(28px) saturate(1.3); }
+        100% { transform: scale(1.28) translate(2%, -1.5%); filter: blur(28px) saturate(1.2); }
+      }
+      .glass-bg-zoom .image-slot {
+        width: 100%; height: 100%;
+        display: block;
+      }
+      .glass-bg-tint {
+        position: absolute; inset: 0;
+        background:
+          radial-gradient(circle at 30% 25%, var(--tint-a), transparent 55%),
+          radial-gradient(circle at 70% 80%, var(--tint-b), transparent 60%),
+          linear-gradient(180deg, rgba(20,30,50,0.05) 0%, var(--tint-bottom) 100%);
+        animation: tintIntro 2.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+      }
+      @keyframes tintIntro {
+        0%   { opacity: 0; }
+        40%  { opacity: 0.5; }
+        100% { opacity: 1; }
+      }
+      /* 초기진입 검정 커튼 */
+      .glass-curtain {
+        position: absolute; inset: 0; z-index: 20;
+        background: #000;
+        pointer-events: none;
+        animation: curtainOut 2.6s cubic-bezier(0.7, 0, 0.3, 1) both;
+      }
+      @keyframes curtainOut {
+        0%   { opacity: 1; }
+        18%  { opacity: 0.9; }
+        60%  { opacity: 0.25; }
+        100% { opacity: 0; }
+      }
+      /* 렌즈 플레어 — 그라데이션 스트릭이 화면 가로지르며 스윕 */
+      .lens-flare {
+        position: absolute;
+        top: -20%; left: -50%;
+        width: 200%; height: 140%;
+        z-index: 15;
+        pointer-events: none;
+        background: linear-gradient(
+          108deg,
+          transparent 30%,
+          rgba(255,235,180,0.0) 38%,
+          rgba(255,225,160,0.55) 47%,
+          rgba(255,255,235,0.95) 50%,
+          rgba(255,225,160,0.55) 53%,
+          rgba(255,235,180,0.0) 62%,
+          transparent 70%
+        );
+        filter: blur(8px);
+        mix-blend-mode: screen;
+        transform: translateX(-60%);
+        opacity: 0;
+        animation: lensSweep 3.4s cubic-bezier(0.45, 0, 0.55, 1) 1.4s both;
+      }
+      @keyframes lensSweep {
+        0%   { transform: translateX(-60%); opacity: 0; }
+        20%  { opacity: 0.6; }
+        50%  { transform: translateX(0%); opacity: 1; }
+        80%  { opacity: 0.5; }
+        100% { transform: translateX(60%); opacity: 0; }
+      }
+      /* Bokeh 입자 */
+      .particles {
+        position: absolute; inset: 0;
+        z-index: 2;
+        pointer-events: none;
+        overflow: hidden;
+        opacity: 0;
+        animation: particlesIn 1.6s ease-out 2.4s forwards;
+      }
+      @keyframes particlesIn {
+        to { opacity: 1; }
+      }
+      .particle {
+        position: absolute;
+        bottom: -20px;
+        border-radius: 50%;
+        background: radial-gradient(circle, var(--particle-color), rgba(255,250,230,0));
+        animation-name: particleFloat;
+        animation-timing-function: linear;
+        animation-iteration-count: infinite;
+        will-change: transform, opacity;
+      }
+      @keyframes particleFloat {
+        0%   { transform: translate(0, 0); opacity: 0; }
+        10%  { opacity: 1; }
+        90%  { opacity: 1; }
+        100% { transform: translate(var(--drift), -820px); opacity: 0; }
+      }
+      /* 비네트 — 호흡 */
+      .vignette {
+        position: absolute; inset: 0;
+        z-index: 3;
+        pointer-events: none;
+        background: radial-gradient(ellipse 80% 90% at 50% 50%, transparent 40%, var(--vignette-color) 100%);
+        animation: vignetteBreath 9s ease-in-out infinite;
+      }
+      @keyframes vignetteBreath {
+        0%, 100% { opacity: 0.7; }
+        50%      { opacity: 1; }
+      }
+
+      .glass-content {
+        position: relative; z-index: 10;
+        height: 100%;
+        padding: 88px 28px 36px;
+        display: flex; flex-direction: column;
+        color: white;
+      }
+      .glass-eyebrow {
+        font-family: var(--pixel);
+        font-size: 11px;
+        letter-spacing: 0.22em;
+        opacity: 0.85;
+        margin-bottom: 18px;
+        color: #fff;
+      }
+
+      .glass-title {
+        font-family: var(--ui);
+        font-size: 44px;
+        font-weight: 800;
+        letter-spacing: -0.035em;
+        line-height: 1.05;
+        margin: 0 0 12px;
+        display: flex;
+        flex-wrap: wrap;
+      }
+      .glass-title__ch {
+        display: inline-block;
+        will-change: opacity, transform, filter;
+      }
+
+      .glass-subtitle {
+        font-size: 14px;
+        opacity: 0.88;
+        line-height: 1.5;
+      }
+
+      .glass-spacer { flex: 1; }
+
+      .glass-list {
+        display: flex; flex-direction: column; gap: 11px;
+      }
+      .glass-row {
+        position: relative;
+        display: flex; align-items: center; gap: 14px;
+        padding: 14px 16px;
+        background: rgba(255,255,255,0.16);
+        backdrop-filter: blur(22px) saturate(1.4);
+        -webkit-backdrop-filter: blur(22px) saturate(1.4);
+        border: 1px solid rgba(255,255,255,0.22);
+        border-radius: 20px;
+        cursor: pointer;
+        text-align: left;
+        color: white;
+        text-decoration: none;
+        box-shadow: 0 10px 28px -12px rgba(0,0,0,0.35);
+        opacity: 0;
+        transform: translateY(14px);
+        animation: rowIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        overflow: hidden;
+        transition: transform 0.2s ease;
+      }
+      /* 카드 안쪽에 천천히 색이 흐르는 글로우 */
+      .glass-row::before {
+        content: '';
+        position: absolute;
+        inset: -20%;
+        background:
+          radial-gradient(ellipse 50% 60% at 20% 30%, var(--glow-a, rgba(120,200,240,0.4)), transparent 65%),
+          radial-gradient(ellipse 60% 70% at 80% 70%, var(--glow-b, rgba(255,200,150,0.35)), transparent 70%);
+        filter: blur(8px);
+        animation: glowDrift 12s ease-in-out infinite;
+        pointer-events: none;
+        opacity: 0.9;
+        mix-blend-mode: screen;
+      }
+      @keyframes glowDrift {
+        0%   { transform: translate(0, 0) rotate(0deg); }
+        33%  { transform: translate(-8%, 6%) rotate(20deg); }
+        66%  { transform: translate(6%, -4%) rotate(-15deg); }
+        100% { transform: translate(0, 0) rotate(0deg); }
+      }
+      .glass-row > * { position: relative; z-index: 1; }
+      @keyframes rowIn {
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .glass-row__avatar {
+        width: 44px; height: 44px; border-radius: 999px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 19px; font-weight: 700;
+        color: white; flex-shrink: 0;
+        box-shadow:
+          inset 0 1px 0 rgba(255,255,255,0.35),
+          0 4px 10px -4px rgba(0,0,0,0.3);
+      }
+      .glass-row__body { flex: 1; min-width: 0; }
+      .glass-row__title {
+        font-size: 16px;
+        font-weight: 700;
+        letter-spacing: -0.015em;
+        line-height: 1.2;
+      }
+      .glass-row__sub {
+        font-size: 11.5px;
+        opacity: 0.72;
+        margin-top: 2px;
+        letter-spacing: 0.01em;
+      }
+      .glass-row__chev {
+        font-size: 24px;
+        opacity: 0.55;
+        line-height: 1;
+        margin-left: 4px;
+      }
+
+      /* ════════════ 폰 프레임 ════════════ */
+      .phone-shell {
+        position: relative;
+        width: 390px;
+        max-width: calc(100vw - 24px);
+        aspect-ratio: 390 / 800;
+        max-height: calc(100vh - 32px);
+        border-radius: 48px;
+        overflow: hidden;
+        background: #000;
+        box-shadow:
+          0 50px 100px -30px rgba(0,0,0,0.5),
+          0 0 0 1.5px rgba(255,255,255,0.06);
+      }
+      .phone-status {
+        position: absolute; top: 0; left: 0; right: 0;
+        height: 54px;
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 18px 28px 0;
+        font-family: var(--ui);
+        font-size: 15px; font-weight: 600;
+        color: #fff;
+        z-index: 100;
+        pointer-events: none;
+      }
+      .phone-status__icons { display: flex; align-items: center; gap: 5px; }
+      .phone-island {
+        position: absolute; top: 11px; left: 50%; transform: translateX(-50%);
+        width: 120px; height: 36px; border-radius: 22px;
+        background: #000; z-index: 99;
+      }
+      .phone-indicator {
+        position: absolute; bottom: 9px; left: 50%; transform: translateX(-50%);
+        width: 134px; height: 5px; border-radius: 999px;
+        background: rgba(255,255,255,0.55); z-index: 99;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script
+      src="https://unpkg.com/react@18.3.1/umd/react.development.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"
+      crossorigin="anonymous"
+    ></script>
+
+    <script type="text/babel">
+      // ═══════════════════════════════════════════════════════════
+      // GlassHome — 첫 화면 (시간대별 테마 + 시네마틱 효과)
+      // 원본: variant-glass.jsx (인라인으로 합침)
+      // ═══════════════════════════════════════════════════════════
+      const { useState, useEffect, useRef, useMemo } = React;
+
+      // 시간대별 인사말
+      function getGreeting(now = new Date()) {
+        const h = now.getHours();
+        const buckets = {
+          morning:   ['좋은 아침이에요', '오늘도 반가워요', '잘 잤어요?', '오늘도 화이팅', '하루를 시작해요'],
+          noon:      ['맛있는 점심 보내요', '오늘도 잘 지내요', '오후도 화이팅', '햇살이 따뜻해요'],
+          afternoon: ['좋은 오후예요', '잘 보내고 있어요', '조금만 더 힘내요', '오늘은 어땠어요?'],
+          evening:   ['좋은 저녁이에요', '오늘도 수고했어요', '잘 보냈어요?', '집에 잘 왔어요'],
+          night:     ['오늘도 고생했어요', '편안한 밤 되세요', '잘 자요', '내일 또 만나요'],
+          dawn:      ['아직 안 자요?', '조심히 보내요', '편안한 새벽이에요'],
+        };
+        let key = 'morning';
+        if (h >= 5 && h < 11)       key = 'morning';
+        else if (h >= 11 && h < 14) key = 'noon';
+        else if (h >= 14 && h < 18) key = 'afternoon';
+        else if (h >= 18 && h < 22) key = 'evening';
+        else if (h >= 22 || h < 2)  key = 'night';
+        else                        key = 'dawn';
+        const list = buckets[key];
+        const day = now.getDate();
+        return { text: list[day % list.length], bucket: key };
+      }
+
+      // 시간대별 테마
+      function getTheme(now = new Date()) {
+        const h = now.getHours();
+        if (h >= 5  && h < 10) return 'dawn';
+        if (h >= 10 && h < 17) return 'day';
+        if (h >= 17 && h < 21) return 'dusk';
+        return 'night';
+      }
+
+      function GlassHome() {
+        const [pressed, setPressed] = useState(null);
+        const greeting = useMemo(() => getGreeting(), []);
+        const theme = useMemo(() => getTheme(), []);
+
+        // ─── 두 외부 사이트 연동 ───────────────────────────────
+        const items = [
+          {
+            id: 'english',
+            title: '혜원이 영어 놀이터',
+            sub: 'English Playground',
+            url: 'https://hyewon-english.pages.dev/',
+            tint: '#7CB7DF',
+            glowA: 'rgba(120,200,240,0.45)',
+            glowB: 'rgba(255,200,150,0.35)',
+            icon: 'A',
+          },
+          {
+            id: 'family',
+            title: '재경혜 홈페이지',
+            sub: 'Family Home',
+            url: 'https://jkhphoto.netlify.app/',
+            tint: '#E8A89A',
+            glowA: 'rgba(255,180,160,0.45)',
+            glowB: 'rgba(180,150,255,0.30)',
+            icon: '🏠',
+          },
+        ];
+
+        // 안전망: 애니메이션이 막힌 환경에서도 표시되도록
+        useEffect(() => {
+          const t = setTimeout(() => {
+            document.querySelectorAll('.glass-row').forEach((el) => {
+              el.style.opacity = '1';
+              el.style.transform = 'translateY(0)';
+            });
+          }, 3000);
+          return () => clearTimeout(t);
+        }, []);
+
+        return (
+          <div className="glass-screen" data-theme={theme}>
+            {/* 배경 그라데이션 (테마별 자동 변경) + 인트로 줌 */}
+            <div className="glass-bg-wrap">
+              <div className="glass-bg-zoom">
+                <div className="image-slot" />
+              </div>
+              <div className="glass-bg-tint" />
+            </div>
+
+            {/* Bokeh 빛 입자 */}
+            <Particles count={20} />
+
+            {/* 비네트 (호흡) */}
+            <div className="vignette" />
+
+            {/* 렌즈 플레어 스윕 (인트로) */}
+            <div className="lens-flare" />
+
+            {/* 검정 첫 진입 커튼 */}
+            <div className="glass-curtain" ref={(el) => {
+              if (el && !el.dataset.armed) {
+                el.dataset.armed = '1';
+                setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.8s ease'; }, 2800);
+                setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 3800);
+              }
+            }} />
+
+            {/* 컨텐츠 */}
+            <div className="glass-content">
+              <div className="glass-eyebrow">JAE KYOUNG HYE</div>
+
+              <RevealTitle text={greeting.text} />
+
+              <div className="glass-subtitle">
+                <RevealText text="재경혜 홈에 오신 것을 환영해요" delay={1.7 + (greeting.text.length * 0.04)} duration={0.6} />
+              </div>
+
+              <div className="glass-spacer" />
+
+              <div className="glass-list">
+                {items.map((it, i) => (
+                  <a
+                    key={it.id}
+                    className="glass-row"
+                    href={it.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      '--glow-a': it.glowA,
+                      '--glow-b': it.glowB,
+                      animationDelay: `${2.3 + i * 0.14}s`,
+                      transform: pressed === it.id ? 'scale(0.985)' : 'scale(1)',
+                    }}
+                    onPointerDown={() => setPressed(it.id)}
+                    onPointerUp={() => setPressed(null)}
+                    onPointerLeave={() => setPressed(null)}
+                  >
+                    <div className="glass-row__avatar" style={{ background: it.tint }}>
+                      <span>{it.icon}</span>
+                    </div>
+                    <div className="glass-row__body">
+                      <div className="glass-row__title">{it.title}</div>
+                      <div className="glass-row__sub">{it.sub}</div>
+                    </div>
+                    <div className="glass-row__chev">›</div>
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // Bokeh 입자 — 작은 빛 입자가 위로 흐름
+      function Particles({ count = 20 }) {
+        const particles = useMemo(() => {
+          return Array.from({ length: count }).map((_, i) => {
+            const seed = (i * 9301 + 49297) % 233280;
+            const r = (n) => ((seed * (n + 1)) % 1000) / 1000;
+            return {
+              i,
+              left: r(1) * 100,
+              size: 3 + r(2) * 7,
+              delay: r(3) * 12,
+              duration: 14 + r(4) * 12,
+              opacity: 0.25 + r(5) * 0.55,
+              drift: -10 + r(6) * 20,
+              blur: 0.5 + r(7) * 1.5,
+            };
+          });
+        }, [count]);
+        return (
+          <div className="particles" aria-hidden="true">
+            {particles.map((p) => (
+              <span
+                key={p.i}
+                className="particle"
+                style={{
+                  left: `${p.left}%`,
+                  width: p.size,
+                  height: p.size,
+                  opacity: p.opacity,
+                  filter: `blur(${p.blur}px)`,
+                  animationDelay: `${p.delay}s`,
+                  animationDuration: `${p.duration}s`,
+                  '--drift': `${p.drift}px`,
+                }}
+              />
+            ))}
+          </div>
+        );
+      }
+
+      // 제목 — 글자 단위로 페이드인
+      function RevealTitle({ text, startDelay = 0.85, perChar = 0.085 }) {
+        const chars = [...text];
+        const [mounted, setMounted] = useState(false);
+        useEffect(() => {
+          const t = setTimeout(() => setMounted(true), 40);
+          return () => clearTimeout(t);
+        }, []);
+        return (
+          <h1 className="glass-title" aria-label={text}>
+            {chars.map((ch, i) => (
+              <span
+                key={i}
+                className="glass-title__ch"
+                style={{
+                  opacity: mounted ? 1 : 0,
+                  transform: mounted ? 'translateX(0) translateY(0)' : 'translateX(-22px) translateY(4px)',
+                  filter: mounted ? 'blur(0)' : 'blur(6px)',
+                  transition: `opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1) ${startDelay + i * perChar}s, transform 0.65s cubic-bezier(0.22, 1, 0.36, 1) ${startDelay + i * perChar}s, filter 0.5s ease ${startDelay + i * perChar}s`,
+                }}
+                aria-hidden="true"
+              >
+                {ch === ' ' ? ' ' : ch}
+              </span>
+            ))}
+          </h1>
+        );
+      }
+
+      // 부제 — 통째로 페이드인
+      function RevealText({ text, delay = 0, duration = 0.6 }) {
+        const [mounted, setMounted] = useState(false);
+        useEffect(() => {
+          const t = setTimeout(() => setMounted(true), 40);
+          return () => clearTimeout(t);
+        }, []);
+        return (
+          <span
+            style={{
+              display: 'inline-block',
+              opacity: mounted ? 0.88 : 0,
+              transform: mounted ? 'translateY(0)' : 'translateY(8px)',
+              transition: `opacity ${duration}s ease ${delay}s, transform ${duration}s ease ${delay}s`,
+            }}
+          >
+            {text}
+          </span>
+        );
+      }
+
+      // ═══════════════════════════════════════════════════════════
+      // 폰 프레임 안에 GlassHome을 넣어서 렌더
+      // ═══════════════════════════════════════════════════════════
+      function App() {
+        return (
+          <div className="phone-shell">
+            <div className="phone-island" />
+            <div className="phone-status">
+              <span>9:41</span>
+              <span className="phone-status__icons">
+                <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor">
+                  <rect x="0" y="7" width="3" height="4" rx="0.5" />
+                  <rect x="4.5" y="5" width="3" height="6" rx="0.5" />
+                  <rect x="9" y="3" width="3" height="8" rx="0.5" />
+                  <rect x="13.5" y="0" width="3" height="11" rx="0.5" />
+                </svg>
+                <svg width="16" height="11" viewBox="0 0 16 11" fill="none" stroke="currentColor" strokeWidth="1.3">
+                  <path d="M8 10.5a1 1 0 100-2 1 1 0 000 2zM2.5 5.5a8 8 0 0111 0M5 7.7a4.5 4.5 0 016 0" />
+                </svg>
+                <svg width="25" height="11" viewBox="0 0 25 11" fill="none">
+                  <rect x="0.5" y="0.5" width="20" height="10" rx="2.5" stroke="currentColor" />
+                  <rect x="2" y="2" width="17" height="7" rx="1" fill="currentColor" />
+                  <rect x="21.5" y="3" width="2" height="5" rx="0.5" fill="currentColor" />
+                </svg>
+              </span>
+            </div>
+            <GlassHome />
+            <div className="phone-indicator" />
+          </div>
+        );
+      }
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(<App />);
+    </script>
+  </body>
+</html>
