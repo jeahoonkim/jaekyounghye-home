@@ -1,0 +1,1006 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <title>재경혜 일정</title>
+
+    <!-- PWA 메타 -->
+    <link rel="manifest" href="manifest.json" />
+    <link rel="icon" type="image/svg+xml" href="icon.svg" />
+    <link rel="apple-touch-icon" href="icon.svg" />
+    <meta name="theme-color" content="#eceae6" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="재경혜" />
+
+    <!-- 폰트 -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css"
+    />
+
+    <style>
+      /* ═══════════ 디자인 토큰 ═══════════ */
+      :root {
+        --ui: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+        /* 사람 색 */
+        --jae: #3E6FE0;
+        --kyung: #2F9C8B;
+        --hye: #E0648C;
+        /* 강조 */
+        --accent: #E0683A;     /* 오늘 */
+        --selected: #1f2937;   /* 선택된 날 */
+        --shadow-card: 0 1px 4px rgba(17,24,39,.05);
+        --shadow-phone: 0 30px 70px rgba(17,24,39,.18);
+      }
+
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0; padding: 0;
+        background: #eceae6;
+        font-family: var(--ui);
+        -webkit-font-smoothing: antialiased;
+        color: #111;
+      }
+      body {
+        min-height: 100vh;
+        display: flex; justify-content: center; align-items: flex-start;
+      }
+      button { font-family: inherit; cursor: pointer; }
+      input, textarea, select { font-family: inherit; }
+      a { color: inherit; text-decoration: none; }
+
+      /* ═══════════ 폰 셸 ═══════════ */
+      .phone-outer {
+        width: 100%;
+        max-width: 412px;
+        padding: 16px 10px 24px;
+      }
+      @media (min-width: 480px) {
+        .phone-outer {
+          padding: 32px 10px;
+        }
+      }
+      .phone {
+        background: #fff;
+        border-radius: 38px;
+        box-shadow: var(--shadow-phone), 0 2px 10px rgba(17,24,39,.06);
+        padding: 10px;
+      }
+      .screen {
+        background: #fafafa;
+        border-radius: 30px;
+        overflow: hidden;
+        border: 1px solid #f0f0f0;
+        position: relative;
+      }
+
+      /* ═══════════ 상단 바 ═══════════ */
+      .topbar {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 14px 18px 6px;
+      }
+      .back-btn {
+        background: transparent; border: none;
+        padding: 6px 4px; margin-left: -4px;
+        color: #374151; font-weight: 600; font-size: 14px;
+        display: flex; align-items: center; gap: 4px;
+      }
+      .back-btn:hover { color: #111; }
+      .who-am-i {
+        display: flex; align-items: center; gap: 6px;
+        font-size: 12px; color: #6b7280; font-weight: 500;
+      }
+      .who-am-i select {
+        background: #fff;
+        border: 1px solid #e5e5e2;
+        border-radius: 999px;
+        padding: 4px 8px 4px 10px;
+        font-size: 12px; font-weight: 700;
+        color: #111;
+      }
+
+      /* ═══════════ 헤더 (월 + 멤버) ═══════════ */
+      .header {
+        padding: 8px 24px 8px;
+        display: flex; align-items: center; justify-content: space-between;
+      }
+      .month-label { display: flex; align-items: baseline; gap: 8px; }
+      .month-num {
+        font-weight: 800; font-size: 25px; color: #111;
+        letter-spacing: -0.02em;
+      }
+      .year-num {
+        font-weight: 600; font-size: 14px; color: #b0b0b0;
+      }
+      .month-nav {
+        background: transparent; border: none;
+        font-size: 18px; color: #6b7280;
+        padding: 4px 8px; border-radius: 8px;
+      }
+      .month-nav:hover { background: #f3f3f3; color: #111; }
+      .member-stack { display: flex; align-items: center; }
+      .member-stack .avatar {
+        width: 29px; height: 29px; border-radius: 50%;
+        color: #fff; font-weight: 700; font-size: 12px;
+        display: flex; align-items: center; justify-content: center;
+        border: 2px solid #fff;
+        box-shadow: 0 1px 3px rgba(0,0,0,.12);
+      }
+      .member-stack .avatar + .avatar { margin-left: -9px; }
+
+      /* ═══════════ 월 달력 ═══════════ */
+      .card {
+        background: #fff; border-radius: 18px;
+        box-shadow: var(--shadow-card);
+      }
+      .calendar {
+        margin: 6px 18px 0;
+        padding: 14px 14px 12px;
+      }
+      .dow-row {
+        display: flex; margin-bottom: 8px;
+      }
+      .dow-row span {
+        flex: 1; text-align: center;
+        font-weight: 700; font-size: 11px;
+        color: #9aa0aa;
+      }
+      .dow-row .sat { color: var(--jae); }
+      .dow-row .sun { color: #d9534f; }
+      .week-row { display: flex; }
+      .day-cell {
+        flex: 1; height: 38px;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer;
+      }
+      .day-cell.empty { cursor: default; }
+      .day-bubble {
+        width: 30px; height: 30px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 13px; font-weight: 500; color: #374151;
+        border: 1.5px solid transparent;
+        transition: background 0.12s ease;
+      }
+      .day-bubble.has-event { background: #EBEFF7; }
+      .day-bubble.today {
+        color: var(--accent);
+        border-color: var(--accent);
+        font-weight: 700;
+      }
+      .day-bubble.selected {
+        background: var(--selected);
+        color: #fff;
+        font-weight: 700;
+        border-color: var(--selected);
+      }
+      .calendar-legend {
+        display: flex; align-items: center; gap: 6px;
+        margin-top: 10px; padding-top: 10px;
+        border-top: 1px solid #f3f3f3;
+      }
+      .legend-chip {
+        width: 13px; height: 13px; border-radius: 5px;
+        background: #EBEFF7;
+      }
+      .legend-text { font-size: 11px; color: #9aa0aa; font-weight: 500; }
+
+      /* ═══════════ 주간 스트립 ═══════════ */
+      .week-strip {
+        margin: 12px 18px 0;
+        padding: 6px;
+        display: flex; gap: 2px;
+      }
+      .week-col {
+        flex: 1;
+        display: flex; flex-direction: column; align-items: center; gap: 5px;
+        padding: 8px 0;
+        border-radius: 13px;
+        cursor: pointer;
+        background: transparent;
+        border: none;
+        color: inherit;
+      }
+      .week-col .dow {
+        font-weight: 600; font-size: 11px; color: #9ca3af;
+      }
+      .week-col .date {
+        font-weight: 700; font-size: 15px; color: #374151;
+      }
+      .week-col .dot {
+        width: 4px; height: 4px; border-radius: 50%;
+        background: transparent;
+      }
+      .week-col.weekend .dow { color: #9aa0aa; }
+      .week-col.today .dot { background: var(--accent); }
+      .week-col.selected {
+        background: #111;
+      }
+      .week-col.selected .dow,
+      .week-col.selected .date { color: #fff; }
+      .week-col.selected.today .dot { background: #fff; }
+
+      /* ═══════════ 선택한 날 헤더 ═══════════ */
+      .day-header {
+        display: flex; align-items: center; gap: 8px;
+        padding: 18px 24px 10px;
+      }
+      .day-header__label {
+        font-weight: 700; font-size: 17px; color: #111;
+      }
+      .today-chip {
+        font-weight: 700; font-size: 10px; color: #fff;
+        background: var(--accent);
+        border-radius: 999px;
+        padding: 3px 8px;
+      }
+      .add-btn {
+        margin-left: auto;
+        background: var(--selected); color: #fff;
+        border: none; border-radius: 999px;
+        padding: 6px 12px;
+        font-size: 12px; font-weight: 700;
+        display: flex; align-items: center; gap: 4px;
+      }
+      .add-btn:hover { background: #000; }
+
+      /* ═══════════ 타임라인 ═══════════ */
+      .timeline {
+        padding: 2px 24px 4px;
+      }
+      .timeline-empty {
+        text-align: center; padding: 28px 12px;
+        color: #9ca3af; font-size: 13px; font-weight: 500;
+      }
+      .entry {
+        display: flex; gap: 13px;
+      }
+      .entry__rail {
+        display: flex; flex-direction: column; align-items: center;
+        width: 42px; flex: none;
+      }
+      .entry__time {
+        font-weight: 700; font-size: 12px; color: #374151;
+        margin-top: 2px;
+      }
+      .entry__node {
+        width: 11px; height: 11px; border-radius: 50%;
+        margin-top: 7px;
+        border: 2.5px solid #fff;
+        background: var(--node-color, var(--jae));
+        box-shadow: 0 0 0 1.5px var(--node-color, var(--jae));
+      }
+      .entry__line {
+        flex: 1; width: 2px;
+        background: #ececec;
+        margin-top: 2px;
+        min-height: 18px;
+      }
+      .entry__card {
+        flex: 1; margin-bottom: 12px;
+        background: #fff; border-radius: 14px;
+        padding: 13px 15px;
+        cursor: pointer;
+        box-shadow: var(--shadow-card);
+        border-left: 4px solid var(--node-color, var(--jae));
+      }
+      .entry__head {
+        display: flex; align-items: center; gap: 8px;
+      }
+      .entry__title {
+        font-weight: 600; font-size: 15px; color: #1f2937;
+        flex: 1; letter-spacing: -0.01em;
+      }
+      .entry__badge {
+        width: 22px; height: 22px; border-radius: 50%;
+        color: #fff; font-weight: 700; font-size: 11px;
+        display: flex; align-items: center; justify-content: center;
+        background: var(--node-color, var(--jae));
+      }
+      .entry__detail {
+        margin-top: 11px; padding-top: 11px;
+        border-top: 1px solid #f1f1f1;
+      }
+      .entry__detail .row {
+        margin-bottom: 5px; font-size: 13px;
+      }
+      .entry__detail .row.time { color: #374151; font-weight: 600; }
+      .entry__detail .row.loc, .entry__detail .row.memo {
+        color: #6b7280; font-weight: 500;
+      }
+      .entry__detail .row.memo { margin-bottom: 8px; }
+      .entry__meta {
+        display: flex; align-items: center; gap: 8px;
+        font-size: 11px; color: #9ca3af; font-weight: 500;
+      }
+      .entry__del {
+        background: transparent; border: none;
+        color: #d9534f; font-size: 11px; font-weight: 600;
+        padding: 2px 6px; margin-left: auto; border-radius: 6px;
+      }
+      .entry__del:hover { background: #fdecea; }
+
+      /* ═══════════ 체크리스트 ═══════════ */
+      .checklist {
+        margin: 8px 18px 22px;
+        padding: 16px 18px;
+      }
+      .checklist__head {
+        display: flex; align-items: center; justify-content: space-between;
+        margin-bottom: 12px;
+      }
+      .checklist__title { font-weight: 700; font-size: 14px; color: #111; }
+      .checklist__count {
+        font-weight: 600; font-size: 11px; color: var(--jae);
+      }
+      .check-item {
+        display: flex; align-items: center; gap: 11px;
+        padding: 8px 0; cursor: pointer;
+      }
+      .check-box {
+        width: 20px; height: 20px; border-radius: 50%;
+        border: 2px solid #d8d8d4;
+        background: transparent;
+        color: #fff; font-weight: 700; font-size: 11px;
+        display: flex; align-items: center; justify-content: center;
+        flex: none;
+      }
+      .check-item.done .check-box {
+        background: #111; border-color: #111;
+      }
+      .check-label {
+        flex: 1; font-weight: 600; font-size: 14px; color: #374151;
+      }
+      .check-item.done .check-label {
+        color: #bdbdba; text-decoration: line-through;
+      }
+      .check-who {
+        width: 20px; height: 20px; border-radius: 50%;
+        color: #fff; font-weight: 700; font-size: 10px;
+        display: flex; align-items: center; justify-content: center;
+        flex: none;
+      }
+      .check-del {
+        background: transparent; border: none; color: #c0c0bd;
+        padding: 2px 4px; font-size: 14px; line-height: 1;
+        opacity: 0; transition: opacity 0.15s ease;
+      }
+      .check-item:hover .check-del { opacity: 1; }
+      .add-checklist {
+        display: flex; align-items: center; gap: 9px;
+        margin-top: 6px; padding-top: 8px;
+        color: #c0c0bd;
+        background: transparent; border: none; width: 100%;
+        text-align: left;
+        padding: 8px 0;
+      }
+      .add-checklist__icon {
+        width: 20px; height: 20px; border-radius: 50%;
+        border: 2px dashed #d8d8d4;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 15px; line-height: 1;
+        flex: none;
+      }
+      .add-checklist__text { font-weight: 500; font-size: 14px; }
+
+      .bottom-bar {
+        height: 5px; width: 120px;
+        background: #e5e5e2; border-radius: 999px;
+        margin: 0 auto 12px;
+      }
+
+      /* ═══════════ 입력 다이얼로그 ═══════════ */
+      .dialog-backdrop {
+        position: fixed; inset: 0;
+        background: rgba(17,24,39,0.4);
+        display: none;
+        align-items: center; justify-content: center;
+        z-index: 100;
+        padding: 16px;
+        backdrop-filter: blur(2px);
+      }
+      .dialog-backdrop.open { display: flex; }
+      .dialog {
+        background: #fff;
+        border-radius: 20px;
+        padding: 22px 22px 18px;
+        max-width: 360px; width: 100%;
+        box-shadow: 0 20px 50px rgba(17,24,39,0.25);
+      }
+      .dialog h3 {
+        margin: 0 0 14px;
+        font-size: 17px; font-weight: 700; color: #111;
+      }
+      .field { margin-bottom: 11px; }
+      .field label {
+        display: block; font-size: 11px; color: #6b7280;
+        font-weight: 600; margin-bottom: 4px;
+        letter-spacing: 0.02em;
+      }
+      .field input, .field textarea, .field select {
+        width: 100%;
+        border: 1px solid #e5e5e2;
+        border-radius: 10px;
+        padding: 9px 11px;
+        font-size: 14px; color: #111;
+        background: #fafafa;
+      }
+      .field input:focus, .field textarea:focus, .field select:focus {
+        outline: none;
+        border-color: var(--selected);
+        background: #fff;
+      }
+      .field textarea { resize: vertical; min-height: 56px; }
+      .field-row { display: flex; gap: 8px; }
+      .field-row .field { flex: 1; }
+      .dialog-actions {
+        display: flex; gap: 8px; margin-top: 18px;
+      }
+      .btn-secondary, .btn-primary {
+        flex: 1;
+        padding: 11px;
+        border-radius: 10px;
+        border: none;
+        font-weight: 700; font-size: 14px;
+      }
+      .btn-secondary {
+        background: #f3f3f3; color: #374151;
+      }
+      .btn-primary {
+        background: var(--selected); color: #fff;
+      }
+      .btn-primary:hover { background: #000; }
+    </style>
+  </head>
+
+  <body>
+    <div class="phone-outer">
+      <div class="phone">
+        <div class="screen">
+
+          <!-- 상단 바: 홈 이동 + "나는 누구" 선택 -->
+          <div class="topbar">
+            <a href="index.html" class="back-btn" aria-label="홈으로">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+              <span>홈</span>
+            </a>
+            <div class="who-am-i">
+              <span>나는</span>
+              <select id="whoAmI" aria-label="현재 사용자">
+                <option value="jae">재</option>
+                <option value="kyung">경</option>
+                <option value="hye">혜</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- 월 + 멤버 -->
+          <div class="header">
+            <div class="month-label">
+              <button class="month-nav" id="prevMonth" aria-label="이전 달">‹</button>
+              <span class="month-num" id="monthNum">6월</span>
+              <span class="year-num" id="yearNum">2026</span>
+              <button class="month-nav" id="nextMonth" aria-label="다음 달">›</button>
+            </div>
+            <div class="member-stack" aria-label="멤버">
+              <span class="avatar" style="background: var(--jae)">재</span>
+              <span class="avatar" style="background: var(--kyung)">경</span>
+              <span class="avatar" style="background: var(--hye)">혜</span>
+            </div>
+          </div>
+
+          <!-- 월 달력 -->
+          <div class="card calendar">
+            <div class="dow-row">
+              <span>월</span><span>화</span><span>수</span><span>목</span><span>금</span>
+              <span class="sat">토</span><span class="sun">일</span>
+            </div>
+            <div id="monthGrid"></div>
+            <div class="calendar-legend">
+              <span class="legend-chip"></span>
+              <span class="legend-text">일정이 있는 날</span>
+            </div>
+          </div>
+
+          <!-- 주간 스트립 -->
+          <div class="card week-strip" id="weekStrip"></div>
+
+          <!-- 선택한 날 헤더 + 추가 버튼 -->
+          <div class="day-header">
+            <span class="day-header__label" id="dayLabel">—</span>
+            <span class="today-chip" id="todayChip" style="display:none">오늘</span>
+            <button class="add-btn" id="addEntryBtn">＋ 일정</button>
+          </div>
+
+          <!-- 타임라인 -->
+          <div class="timeline" id="timeline"></div>
+
+          <!-- 체크리스트 -->
+          <div class="card checklist">
+            <div class="checklist__head">
+              <span class="checklist__title">함께 할 일</span>
+              <span class="checklist__count" id="checkCount">0 / 0</span>
+            </div>
+            <div id="checklist"></div>
+            <button class="add-checklist" id="addCheckBtn">
+              <span class="add-checklist__icon">+</span>
+              <span class="add-checklist__text">할 일 추가</span>
+            </button>
+          </div>
+
+          <div class="bottom-bar"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 일정 추가/수정 다이얼로그 -->
+    <div class="dialog-backdrop" id="entryDialog">
+      <div class="dialog" role="dialog" aria-label="일정 입력">
+        <h3 id="entryDialogTitle">새 일정</h3>
+        <div class="field">
+          <label for="entryTitle">제목</label>
+          <input type="text" id="entryTitle" placeholder="예) 팀 회의" />
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="entryTime">시작</label>
+            <input type="time" id="entryTime" />
+          </div>
+          <div class="field">
+            <label for="entryEnd">끝</label>
+            <input type="time" id="entryEnd" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="entryWho">기록자</label>
+          <select id="entryWho">
+            <option value="jae">재</option>
+            <option value="kyung">경</option>
+            <option value="hye">혜</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="entryLoc">장소</label>
+          <input type="text" id="entryLoc" placeholder="예) 강남역" />
+        </div>
+        <div class="field">
+          <label for="entryMemo">메모</label>
+          <textarea id="entryMemo" placeholder="간단한 메모"></textarea>
+        </div>
+        <div class="dialog-actions">
+          <button class="btn-secondary" id="entryCancel">취소</button>
+          <button class="btn-primary" id="entrySave">저장</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 체크리스트 추가 다이얼로그 -->
+    <div class="dialog-backdrop" id="checkDialog">
+      <div class="dialog" role="dialog" aria-label="할 일 입력">
+        <h3>할 일 추가</h3>
+        <div class="field">
+          <label for="checkLabel">내용</label>
+          <input type="text" id="checkLabel" placeholder="예) 케이크 예약" />
+        </div>
+        <div class="field">
+          <label for="checkWho">담당</label>
+          <select id="checkWho">
+            <option value="jae">재</option>
+            <option value="kyung">경</option>
+            <option value="hye">혜</option>
+          </select>
+        </div>
+        <div class="dialog-actions">
+          <button class="btn-secondary" id="checkCancel">취소</button>
+          <button class="btn-primary" id="checkSave">추가</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ═════════════════════════════════════════════════════════════
+      // 재경혜 일정 — 단일 페이지 앱
+      // 저장: localStorage (이 휴대폰에만 보관)
+      //   - "rkh.schedules"  = { "YYYY-MM-DD": [ {id, time, end, title, who, loc, memo}, ... ], ... }
+      //   - "rkh.checklist"  = [ {id, label, who, done}, ... ]
+      //   - "rkh.currentUser" = "jae" | "kyung" | "hye"
+      // ═════════════════════════════════════════════════════════════
+
+      const PEOPLE = {
+        jae:   { initial: '재', color: '#3E6FE0' },
+        kyung: { initial: '경', color: '#2F9C8B' },
+        hye:   { initial: '혜', color: '#E0648C' },
+      };
+
+      // ─── 상태 ─────────────────────────────────────────────
+      const today = new Date();
+      today.setHours(0,0,0,0);
+
+      let selectedDate = new Date(today);     // 선택된 날
+      let viewMonth = new Date(today);        // 표시 중인 달 (1일 기준)
+      viewMonth.setDate(1);
+      let openEntryIds = new Set();           // 펼쳐진 일정 id
+      let editingEntryId = null;              // 수정 중인 일정 id (없으면 새로 추가)
+
+      // ─── 저장소 helpers ─────────────────────────────────
+      const ymd = (d) => {
+        const yy = d.getFullYear();
+        const mm = String(d.getMonth()+1).padStart(2,'0');
+        const dd = String(d.getDate()).padStart(2,'0');
+        return `${yy}-${mm}-${dd}`;
+      };
+      const isSameDay = (a,b) => ymd(a) === ymd(b);
+      const isSameMonth = (a,b) => a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth();
+
+      const loadSchedules = () => {
+        try { return JSON.parse(localStorage.getItem('rkh.schedules') || '{}'); }
+        catch { return {}; }
+      };
+      const saveSchedules = (s) => localStorage.setItem('rkh.schedules', JSON.stringify(s));
+
+      const loadChecklist = () => {
+        try { return JSON.parse(localStorage.getItem('rkh.checklist') || '[]'); }
+        catch { return []; }
+      };
+      const saveChecklist = (c) => localStorage.setItem('rkh.checklist', JSON.stringify(c));
+
+      const loadCurrentUser = () => localStorage.getItem('rkh.currentUser') || 'jae';
+      const saveCurrentUser = (u) => localStorage.setItem('rkh.currentUser', u);
+
+      const uid = () => Math.random().toString(36).slice(2,10);
+
+      // ─── 렌더링 ─────────────────────────────────────────
+      function render() {
+        renderHeader();
+        renderMonth();
+        renderWeek();
+        renderDayHeader();
+        renderTimeline();
+        renderChecklist();
+      }
+
+      function renderHeader() {
+        document.getElementById('monthNum').textContent = (viewMonth.getMonth()+1) + '월';
+        document.getElementById('yearNum').textContent = viewMonth.getFullYear();
+      }
+
+      function renderMonth() {
+        const grid = document.getElementById('monthGrid');
+        grid.innerHTML = '';
+        const year = viewMonth.getFullYear();
+        const mon = viewMonth.getMonth();
+        const first = new Date(year, mon, 1);
+        const daysInMonth = new Date(year, mon+1, 0).getDate();
+        // 월요일 시작 (0=월 ... 6=일)
+        const firstDow = (first.getDay() + 6) % 7;
+        const cells = [];
+        for (let i=0; i<firstDow; i++) cells.push(null);
+        for (let d=1; d<=daysInMonth; d++) cells.push(d);
+        while (cells.length % 7 !== 0) cells.push(null);
+
+        const schedules = loadSchedules();
+        const eventDays = new Set();
+        for (let d=1; d<=daysInMonth; d++) {
+          const key = ymd(new Date(year, mon, d));
+          if (schedules[key] && schedules[key].length > 0) eventDays.add(d);
+        }
+
+        let row;
+        cells.forEach((d, i) => {
+          if (i % 7 === 0) {
+            row = document.createElement('div');
+            row.className = 'week-row';
+            grid.appendChild(row);
+          }
+          const cell = document.createElement('div');
+          cell.className = 'day-cell' + (d === null ? ' empty' : '');
+          if (d !== null) {
+            const cellDate = new Date(year, mon, d);
+            const isToday = isSameDay(cellDate, today);
+            const isSel = isSameDay(cellDate, selectedDate);
+            const hasEvent = eventDays.has(d);
+            const bubble = document.createElement('span');
+            bubble.className = 'day-bubble' +
+              (hasEvent ? ' has-event' : '') +
+              (isToday ? ' today' : '') +
+              (isSel ? ' selected' : '');
+            bubble.textContent = d;
+            cell.appendChild(bubble);
+            cell.addEventListener('click', () => {
+              selectedDate = cellDate;
+              openEntryIds.clear();
+              render();
+            });
+          }
+          row.appendChild(cell);
+        });
+      }
+
+      function renderWeek() {
+        const strip = document.getElementById('weekStrip');
+        strip.innerHTML = '';
+        // 선택한 날이 속한 주(월~일)
+        const monStart = new Date(selectedDate);
+        const dow = (monStart.getDay() + 6) % 7;
+        monStart.setDate(monStart.getDate() - dow);
+        const dows = ['월','화','수','목','금','토','일'];
+        for (let i=0; i<7; i++) {
+          const dt = new Date(monStart);
+          dt.setDate(monStart.getDate() + i);
+          const isSel = isSameDay(dt, selectedDate);
+          const isToday = isSameDay(dt, today);
+          const isWk = i >= 5;
+          const col = document.createElement('button');
+          col.className = 'week-col' +
+            (isSel ? ' selected' : '') +
+            (isToday ? ' today' : '') +
+            (isWk ? ' weekend' : '');
+          col.innerHTML = `
+            <span class="dow">${dows[i]}</span>
+            <span class="date">${dt.getDate()}</span>
+            <span class="dot"></span>
+          `;
+          col.addEventListener('click', () => {
+            selectedDate = dt;
+            // 보고 있는 달도 따라 이동
+            if (!isSameMonth(viewMonth, dt)) {
+              viewMonth = new Date(dt.getFullYear(), dt.getMonth(), 1);
+            }
+            openEntryIds.clear();
+            render();
+          });
+          strip.appendChild(col);
+        }
+      }
+
+      function renderDayHeader() {
+        const dows = ['일요일','월요일','화요일','수요일','목요일','금요일','토요일'];
+        const label = `${selectedDate.getMonth()+1}월 ${selectedDate.getDate()}일 ${dows[selectedDate.getDay()]}`;
+        document.getElementById('dayLabel').textContent = label;
+        document.getElementById('todayChip').style.display = isSameDay(selectedDate, today) ? 'inline-block' : 'none';
+      }
+
+      function renderTimeline() {
+        const timeline = document.getElementById('timeline');
+        const schedules = loadSchedules();
+        const key = ymd(selectedDate);
+        const entries = (schedules[key] || []).slice().sort((a,b) => (a.time||'').localeCompare(b.time||''));
+
+        timeline.innerHTML = '';
+        if (entries.length === 0) {
+          const empty = document.createElement('div');
+          empty.className = 'timeline-empty';
+          empty.textContent = '일정이 없어요. ＋ 버튼으로 추가해보세요.';
+          timeline.appendChild(empty);
+          return;
+        }
+
+        entries.forEach((e, idx) => {
+          const person = PEOPLE[e.who] || PEOPLE.jae;
+          const wrap = document.createElement('div');
+          wrap.className = 'entry';
+          wrap.style.setProperty('--node-color', person.color);
+          const isOpen = openEntryIds.has(e.id);
+          wrap.innerHTML = `
+            <div class="entry__rail">
+              <span class="entry__time">${e.time || ''}</span>
+              <span class="entry__node"></span>
+              ${idx < entries.length - 1 ? '<span class="entry__line"></span>' : '<span class="entry__line" style="background:transparent"></span>'}
+            </div>
+            <div class="entry__card" data-id="${e.id}">
+              <div class="entry__head">
+                <span class="entry__title">${escapeHtml(e.title || '제목 없음')}</span>
+                <span class="entry__badge">${person.initial}</span>
+              </div>
+              ${isOpen ? `
+                <div class="entry__detail">
+                  <div class="row time">🕑 ${e.time || ''}${e.end ? ' – ' + e.end : ''}</div>
+                  ${e.loc ? `<div class="row loc">📍 ${escapeHtml(e.loc)}</div>` : ''}
+                  ${e.memo ? `<div class="row memo">📝 ${escapeHtml(e.memo)}</div>` : ''}
+                  <div class="entry__meta">
+                    <span>기록 · ${person.initial}</span>
+                    <button class="entry__del" data-del="${e.id}">삭제</button>
+                  </div>
+                </div>
+              ` : ''}
+            </div>
+          `;
+          timeline.appendChild(wrap);
+        });
+
+        // 카드 토글
+        timeline.querySelectorAll('.entry__card').forEach(card => {
+          card.addEventListener('click', (ev) => {
+            // 삭제 버튼 클릭시는 토글 안 함
+            if (ev.target.closest('[data-del]')) return;
+            const id = card.dataset.id;
+            if (openEntryIds.has(id)) openEntryIds.delete(id);
+            else openEntryIds.add(id);
+            renderTimeline();
+          });
+        });
+        // 삭제
+        timeline.querySelectorAll('[data-del]').forEach(btn => {
+          btn.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            const id = btn.dataset.del;
+            if (!confirm('이 일정을 삭제할까요?')) return;
+            const sch = loadSchedules();
+            const key = ymd(selectedDate);
+            sch[key] = (sch[key] || []).filter(x => x.id !== id);
+            if (sch[key].length === 0) delete sch[key];
+            saveSchedules(sch);
+            openEntryIds.delete(id);
+            render();
+          });
+        });
+      }
+
+      function renderChecklist() {
+        const list = document.getElementById('checklist');
+        const items = loadChecklist();
+        list.innerHTML = '';
+        items.forEach(t => {
+          const person = PEOPLE[t.who] || PEOPLE.jae;
+          const row = document.createElement('div');
+          row.className = 'check-item' + (t.done ? ' done' : '');
+          row.innerHTML = `
+            <span class="check-box">${t.done ? '✓' : ''}</span>
+            <span class="check-label">${escapeHtml(t.label)}</span>
+            <span class="check-who" style="background:${person.color}">${person.initial}</span>
+            <button class="check-del" data-del="${t.id}" title="삭제">×</button>
+          `;
+          row.addEventListener('click', (ev) => {
+            if (ev.target.closest('[data-del]')) return;
+            const items = loadChecklist();
+            const target = items.find(x => x.id === t.id);
+            if (target) {
+              target.done = !target.done;
+              saveChecklist(items);
+              renderChecklist();
+            }
+          });
+          row.querySelector('[data-del]').addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            const items = loadChecklist().filter(x => x.id !== t.id);
+            saveChecklist(items);
+            renderChecklist();
+          });
+          list.appendChild(row);
+        });
+        const done = items.filter(t => t.done).length;
+        document.getElementById('checkCount').textContent = `${done} / ${items.length}`;
+      }
+
+      function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, ch => ({
+          '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+        })[ch]);
+      }
+
+      // ─── 다이얼로그 ─────────────────────────────────────
+      function openEntryDialog(existing) {
+        editingEntryId = existing ? existing.id : null;
+        document.getElementById('entryDialogTitle').textContent = existing ? '일정 수정' : '새 일정';
+        document.getElementById('entryTitle').value = existing?.title || '';
+        document.getElementById('entryTime').value = existing?.time || '';
+        document.getElementById('entryEnd').value = existing?.end || '';
+        document.getElementById('entryWho').value = existing?.who || loadCurrentUser();
+        document.getElementById('entryLoc').value = existing?.loc || '';
+        document.getElementById('entryMemo').value = existing?.memo || '';
+        document.getElementById('entryDialog').classList.add('open');
+        setTimeout(() => document.getElementById('entryTitle').focus(), 50);
+      }
+      function closeEntryDialog() {
+        document.getElementById('entryDialog').classList.remove('open');
+        editingEntryId = null;
+      }
+      function saveEntry() {
+        const title = document.getElementById('entryTitle').value.trim();
+        if (!title) {
+          alert('제목을 입력해주세요.');
+          return;
+        }
+        const entry = {
+          id: editingEntryId || uid(),
+          title,
+          time: document.getElementById('entryTime').value,
+          end:  document.getElementById('entryEnd').value,
+          who:  document.getElementById('entryWho').value,
+          loc:  document.getElementById('entryLoc').value.trim(),
+          memo: document.getElementById('entryMemo').value.trim(),
+        };
+        const sch = loadSchedules();
+        const key = ymd(selectedDate);
+        if (!sch[key]) sch[key] = [];
+        if (editingEntryId) {
+          const i = sch[key].findIndex(x => x.id === editingEntryId);
+          if (i >= 0) sch[key][i] = entry;
+          else sch[key].push(entry);
+        } else {
+          sch[key].push(entry);
+        }
+        saveSchedules(sch);
+        closeEntryDialog();
+        render();
+      }
+
+      function openCheckDialog() {
+        document.getElementById('checkLabel').value = '';
+        document.getElementById('checkWho').value = loadCurrentUser();
+        document.getElementById('checkDialog').classList.add('open');
+        setTimeout(() => document.getElementById('checkLabel').focus(), 50);
+      }
+      function closeCheckDialog() {
+        document.getElementById('checkDialog').classList.remove('open');
+      }
+      function saveCheck() {
+        const label = document.getElementById('checkLabel').value.trim();
+        if (!label) {
+          alert('할 일 내용을 입력해주세요.');
+          return;
+        }
+        const who = document.getElementById('checkWho').value;
+        const items = loadChecklist();
+        items.push({ id: uid(), label, who, done: false });
+        saveChecklist(items);
+        closeCheckDialog();
+        renderChecklist();
+      }
+
+      // ─── 이벤트 바인딩 ──────────────────────────────────
+      document.getElementById('prevMonth').addEventListener('click', () => {
+        viewMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth()-1, 1);
+        render();
+      });
+      document.getElementById('nextMonth').addEventListener('click', () => {
+        viewMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth()+1, 1);
+        render();
+      });
+      document.getElementById('addEntryBtn').addEventListener('click', () => openEntryDialog(null));
+      document.getElementById('addCheckBtn').addEventListener('click', openCheckDialog);
+      document.getElementById('entryCancel').addEventListener('click', closeEntryDialog);
+      document.getElementById('entrySave').addEventListener('click', saveEntry);
+      document.getElementById('checkCancel').addEventListener('click', closeCheckDialog);
+      document.getElementById('checkSave').addEventListener('click', saveCheck);
+      // 다이얼로그 바깥 클릭시 닫기
+      document.getElementById('entryDialog').addEventListener('click', (e) => {
+        if (e.target.id === 'entryDialog') closeEntryDialog();
+      });
+      document.getElementById('checkDialog').addEventListener('click', (e) => {
+        if (e.target.id === 'checkDialog') closeCheckDialog();
+      });
+      // ESC로 닫기
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') { closeEntryDialog(); closeCheckDialog(); }
+        if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+          if (document.getElementById('entryDialog').classList.contains('open')) saveEntry();
+          else if (document.getElementById('checkDialog').classList.contains('open')) saveCheck();
+        }
+      });
+
+      // "나는 누구" 선택 저장
+      const whoSel = document.getElementById('whoAmI');
+      whoSel.value = loadCurrentUser();
+      whoSel.addEventListener('change', () => saveCurrentUser(whoSel.value));
+
+      render();
+    </script>
+
+    <!-- PWA 서비스워커 등록 -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./service-worker.js')
+            .then((reg) => console.log('[PWA] SW 등록', reg.scope))
+            .catch((err) => console.warn('[PWA] SW 실패', err));
+        });
+      }
+    </script>
+  </body>
+</html>
