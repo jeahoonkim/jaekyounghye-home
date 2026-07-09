@@ -94,6 +94,7 @@
       .entry__head { display: flex; align-items: center; gap: 8px; }
       .entry__title { font-weight: 600; font-size: 15px; color: #1f2937; flex: 1; letter-spacing: -.01em; }
       .entry__badge { width: 22px; height: 22px; border-radius: 50%; color: #fff; font-weight: 700; font-size: 11px; display: flex; align-items: center; justify-content: center; background: var(--node-color, var(--jae)); }
+      .entry__span { font-size: 10px; font-weight: 700; color: var(--node-color, var(--jae)); background: rgba(0,0,0,0.04); border-radius: 6px; padding: 1px 6px; letter-spacing: 0.01em; }
       .entry__detail { margin-top: 11px; padding-top: 11px; border-top: 1px solid #f1f1f1; }
       .entry__detail .row { margin-bottom: 5px; font-size: 13px; }
       .entry__detail .row.time { color: #374151; font-weight: 600; }
@@ -223,8 +224,12 @@
           <input type="text" id="entryTitle" placeholder="예) 팀 회의" />
         </div>
         <div class="field-row">
-          <div class="field"><label for="entryTime">시작</label><input type="time" id="entryTime" /></div>
-          <div class="field"><label for="entryEnd">끝</label><input type="time" id="entryEnd" /></div>
+          <div class="field"><label for="entryDate">시작 날짜</label><input type="date" id="entryDate" /></div>
+          <div class="field"><label for="entryEndDate">종료 날짜</label><input type="date" id="entryEndDate" /></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label for="entryTime">시작 시간 (첫날)</label><input type="time" id="entryTime" /></div>
+          <div class="field"><label for="entryEnd">끝 시간 (마지막날)</label><input type="time" id="entryEnd" /></div>
         </div>
         <div class="field">
           <label for="entryWho">기록자</label>
@@ -280,8 +285,33 @@
       let openEntryIds = new Set();
       let editingEntryId = null;
       let editingCheckId = null;
-      let cacheEntries = {};
+      let cacheEntries = [];   // flat array: [{ id, title, time, end, date, endDate, who, loc, memo }, ...]
       let cacheChecks = [];
+
+      // 특정 날짜와 겹치는 일정 (여러 날 걸치는 일정 포함)
+      function entriesForDate(dateStr) {
+        return cacheEntries.filter(e => {
+          const start = e.date;
+          const end = e.endDate || e.date;
+          return dateStr >= start && dateStr <= end;
+        });
+      }
+      // 여러 날 일정에서 특정 날짜가 몇 일차인지 (1부터 시작)
+      function dayIndex(entry, dateStr) {
+        if (!entry.date) return 1;
+        const [ys,ms,ds] = entry.date.split('-').map(Number);
+        const [yd,md,dd] = dateStr.split('-').map(Number);
+        const start = new Date(ys, ms-1, ds);
+        const cur = new Date(yd, md-1, dd);
+        return Math.round((cur - start) / 86400000) + 1;
+      }
+      function totalDays(entry) {
+        const end = entry.endDate || entry.date;
+        if (!entry.date || !end) return 1;
+        const [ys,ms,ds] = entry.date.split('-').map(Number);
+        const [ye,me,de] = end.split('-').map(Number);
+        return Math.round((new Date(ye,me-1,de) - new Date(ys,ms-1,ds)) / 86400000) + 1;
+      }
 
       const ymd = (d) => {
         const yy = d.getFullYear();
@@ -338,14 +368,10 @@
       function subscribeFirestore() {
         const { collection, onSnapshot } = backend.firestore;
         onSnapshot(collection(backend.db, 'entries'), (snap) => {
-          const map = {};
-          snap.forEach(d => {
-            const e = { id: d.id, ...d.data() };
-            if (!map[e.date]) map[e.date] = [];
-            map[e.date].push(e);
-          });
-          cacheEntries = map;
-          console.log('[Firestore] entries 동기화:', Object.values(map).flat().length + '개');
+          const arr = [];
+          snap.forEach(d => arr.push({ id: d.id, ...d.data() }));
+          cacheEntries = arr;
+          console.log('[Firestore] entries 동기화:', arr.length + '개');
           render();
         }, (err) => {
           console.error('[Firestore] entries 구독 오류:', err.code, err.message);
@@ -363,7 +389,12 @@
       }
 
       function localLoadAll() {
-        try { cacheEntries = JSON.parse(localStorage.getItem('rkh.schedules') || '{}'); } catch { cacheEntries = {}; }
+        try {
+          const raw = JSON.parse(localStorage.getItem('rkh.schedules') || '[]');
+          // 옛 형식(dict) 자동 변환
+          if (Array.isArray(raw)) cacheEntries = raw;
+          else cacheEntries = Object.values(raw).flat();
+        } catch { cacheEntries = []; }
         try { cacheChecks = JSON.parse(localStorage.getItem('rkh.checklist') || '[]'); } catch { cacheChecks = []; }
       }
       function localSaveSchedules() { localStorage.setItem('rkh.schedules', JSON.stringify(cacheEntries)); }
@@ -374,10 +405,8 @@
           const { doc, setDoc } = backend.firestore;
           await setDoc(doc(backend.db, 'entries', entry.id), entry);
         } else {
-          if (!cacheEntries[entry.date]) cacheEntries[entry.date] = [];
-          const arr = cacheEntries[entry.date];
-          const i = arr.findIndex(x => x.id === entry.id);
-          if (i >= 0) arr[i] = entry; else arr.push(entry);
+          const i = cacheEntries.findIndex(x => x.id === entry.id);
+          if (i >= 0) cacheEntries[i] = entry; else cacheEntries.push(entry);
           localSaveSchedules();
           render();
         }
@@ -387,9 +416,7 @@
           const { doc, deleteDoc } = backend.firestore;
           await deleteDoc(doc(backend.db, 'entries', entry.id));
         } else {
-          const arr = cacheEntries[entry.date] || [];
-          cacheEntries[entry.date] = arr.filter(x => x.id !== entry.id);
-          if (cacheEntries[entry.date].length === 0) delete cacheEntries[entry.date];
+          cacheEntries = cacheEntries.filter(x => x.id !== entry.id);
           localSaveSchedules();
           render();
         }
@@ -441,7 +468,7 @@
         const eventDays = new Set();
         for (let d=1; d<=daysInMonth; d++) {
           const key = ymd(new Date(year, mon, d));
-          if (cacheEntries[key] && cacheEntries[key].length > 0) eventDays.add(d);
+          if (entriesForDate(key).length > 0) eventDays.add(d);
         }
         let row;
         cells.forEach((d, i) => {
@@ -495,7 +522,12 @@
       function renderTimeline() {
         const timeline = document.getElementById('timeline');
         const key = ymd(selectedDate);
-        const entries = (cacheEntries[key] || []).slice().sort((a,b) => (a.time||'').localeCompare(b.time||''));
+        // 시간 순 정렬: 다중일은 첫날이면 e.time, 아니면 뒤로
+        const entries = entriesForDate(key).slice().sort((a,b) => {
+          const at = (a.date === key) ? (a.time || '') : 'zzz';
+          const bt = (b.date === key) ? (b.time || '') : 'zzz';
+          return at.localeCompare(bt);
+        });
         timeline.innerHTML = '';
         if (entries.length === 0) {
           const empty = document.createElement('div');
@@ -510,9 +542,30 @@
           wrap.className = 'entry';
           wrap.style.setProperty('--node-color', person.color);
           const isOpen = openEntryIds.has(e.id);
+          // 다중일 로직: 첫날 시작시간, 마지막날 끝시간, 중간엔 아무것도
+          const isMulti = e.endDate && e.endDate !== e.date;
+          const isFirst = key === e.date;
+          const isLast  = key === (e.endDate || e.date);
+          let railTime = '';
+          let spanBadge = '';
+          if (!isMulti) {
+            railTime = e.time || '';
+          } else if (isFirst) {
+            railTime = e.time || '';
+            spanBadge = '<span class="entry__span">1/' + totalDays(e) + ' · 시작</span>';
+          } else if (isLast) {
+            railTime = e.end ? '~' + e.end : '';
+            spanBadge = '<span class="entry__span">' + totalDays(e) + '/' + totalDays(e) + ' · 끝</span>';
+          } else {
+            railTime = '⋯';
+            spanBadge = '<span class="entry__span">' + dayIndex(e, key) + '/' + totalDays(e) + '</span>';
+          }
           let detail = '';
           if (isOpen) {
-            const timeRow = '<div class="row time">🕑 ' + escapeHtml(e.time || '') + (e.end ? ' – ' + escapeHtml(e.end) : '') + '</div>';
+            const rangeText = isMulti
+              ? escapeHtml(e.date) + (e.time ? ' ' + escapeHtml(e.time) : '') + ' → ' + escapeHtml(e.endDate) + (e.end ? ' ' + escapeHtml(e.end) : '')
+              : escapeHtml(e.time || '') + (e.end ? ' – ' + escapeHtml(e.end) : '');
+            const timeRow = '<div class="row time">🕑 ' + rangeText + '</div>';
             const locRow = e.loc ? '<div class="row loc">📍 ' + escapeHtml(e.loc) + '</div>' : '';
             const memoRow = e.memo ? '<div class="row memo">📝 ' + escapeHtml(e.memo) + '</div>' : '';
             const actions = '<div class="entry__actions"><span class="entry__meta-text">기록 · ' + person.initial + '</span><button class="entry__edit" data-edit="' + e.id + '">수정</button><button class="entry__del" data-del="' + e.id + '">삭제</button></div>';
@@ -521,13 +574,14 @@
           const lineStyle = (idx === entries.length - 1) ? ' style="background:transparent"' : '';
           wrap.innerHTML =
             '<div class="entry__rail">' +
-              '<span class="entry__time">' + escapeHtml(e.time || '') + '</span>' +
+              '<span class="entry__time">' + escapeHtml(railTime) + '</span>' +
               '<span class="entry__node"></span>' +
               '<span class="entry__line"' + lineStyle + '></span>' +
             '</div>' +
             '<div class="entry__card" data-id="' + e.id + '">' +
               '<div class="entry__head">' +
                 '<span class="entry__title">' + escapeHtml(e.title || '제목 없음') + '</span>' +
+                spanBadge +
                 '<span class="entry__badge">' + person.initial + '</span>' +
               '</div>' +
               detail +
@@ -546,8 +600,7 @@
           btn.addEventListener('click', (ev) => {
             ev.stopPropagation();
             const id = btn.dataset.edit;
-            const arr = cacheEntries[ymd(selectedDate)] || [];
-            const e = arr.find(x => x.id === id);
+            const e = cacheEntries.find(x => x.id === id);
             if (e) openEntryDialog(e);
           });
         });
@@ -556,8 +609,7 @@
             ev.stopPropagation();
             const id = btn.dataset.del;
             if (!confirm('이 일정을 삭제할까요?')) return;
-            const arr = cacheEntries[ymd(selectedDate)] || [];
-            const e = arr.find(x => x.id === id);
+            const e = cacheEntries.find(x => x.id === id);
             if (e) { await deleteEntryFromBackend(e); openEntryIds.delete(id); }
           });
         });
@@ -616,6 +668,8 @@
         editingEntryId = existing ? existing.id : null;
         document.getElementById('entryDialogTitle').textContent = existing ? '일정 수정' : '새 일정';
         document.getElementById('entryTitle').value = existing?.title || '';
+        document.getElementById('entryDate').value = existing?.date || ymd(selectedDate);
+        document.getElementById('entryEndDate').value = existing?.endDate || existing?.date || ymd(selectedDate);
         document.getElementById('entryTime').value = existing?.time || '';
         document.getElementById('entryEnd').value = existing?.end || '';
         document.getElementById('entryWho').value = existing?.who || loadCurrentUser();
@@ -628,6 +682,10 @@
       async function saveEntry() {
         const title = document.getElementById('entryTitle').value.trim();
         if (!title) { alert('제목을 입력해주세요.'); return; }
+        const startDate = document.getElementById('entryDate').value || ymd(selectedDate);
+        let endDate = document.getElementById('entryEndDate').value || startDate;
+        // 종료가 시작보다 앞이면 시작으로 맞춤
+        if (endDate < startDate) endDate = startDate;
         const entry = {
           id: editingEntryId || uid(),
           title,
@@ -636,7 +694,8 @@
           who:  document.getElementById('entryWho').value,
           loc:  document.getElementById('entryLoc').value.trim(),
           memo: document.getElementById('entryMemo').value.trim(),
-          date: ymd(selectedDate),
+          date: startDate,
+          endDate: endDate,
         };
         // 다이얼로그 먼저 닫고, 저장은 백그라운드에서 (실패해도 화면 안 멈춤)
         closeEntryDialog();
@@ -669,7 +728,6 @@
         } else {
           item = { id: uid(), label, who, due, done: false };
         }
-        // 다이얼로그 먼저 닫기 (저장 실패와 무관)
         closeCheckDialog();
         try {
           await saveCheckToBackend(item);
@@ -713,6 +771,12 @@
           navigator.serviceWorker.register('./service-worker.js')
             .then(reg => console.log('[PWA] SW', reg.scope))
             .catch(err => console.warn('[PWA] SW err', err));
+        });
+      }
+    </script>
+  </body>
+</html>
+W err', err));
         });
       }
     </script>
