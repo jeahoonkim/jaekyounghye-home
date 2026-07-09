@@ -62,12 +62,17 @@
       .dow-row .sat { color: var(--jae); }
       .dow-row .sun { color: #d9534f; }
       .week-row { display: flex; }
-      .day-cell { flex: 1; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+      .day-cell { flex: 1; height: 44px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; gap: 2px; }
       .day-cell.empty { cursor: default; }
-      .day-bubble { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 500; color: #374151; border: 1.5px solid transparent; transition: background 0.12s ease; }
-      .day-bubble.has-event { background: #EBEFF7; }
-      .day-bubble.today { color: var(--accent); border-color: var(--accent); font-weight: 700; }
-      .day-bubble.selected { background: var(--selected); color: #fff; font-weight: 700; border-color: var(--selected); }
+      .day-bubble { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 500; color: #374151; border: 1.5px solid transparent; transition: background 0.12s ease; position: relative; }
+      .day-bubble.has-event { background: rgba(62, 111, 224, 0.14) !important; color: var(--jae) !important; font-weight: 700 !important; }
+      .day-bubble.today { color: var(--accent) !important; border-color: var(--accent) !important; font-weight: 700 !important; }
+      .day-bubble.selected { background: var(--selected) !important; color: #fff !important; font-weight: 700 !important; border-color: var(--selected) !important; }
+      /* 일정 있는 날 아래에 컬러 점 (다크모드에서도 확실히 보임) */
+      .day-dot { width: 5px; height: 5px; border-radius: 50%; background: transparent; }
+      .day-cell.has-event-dot .day-dot { background: var(--jae) !important; box-shadow: 0 0 0 1px rgba(255,255,255,0.4); }
+      .day-cell.today-dot .day-dot { background: var(--accent) !important; }
+      .day-cell.selected-dot .day-dot { background: transparent; }
       .calendar-legend { display: flex; align-items: center; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px solid #f3f3f3; }
       .legend-chip { width: 13px; height: 13px; border-radius: 5px; background: #EBEFF7; }
       .legend-text { font-size: 11px; color: #9aa0aa; font-weight: 500; }
@@ -147,6 +152,16 @@
       .btn-secondary { background: #f3f3f3; color: #374151; }
       .btn-primary { background: var(--selected); color: #fff; }
       .btn-primary:hover { background: #000; }
+    
+      /* 다크모드 강제 반전 방지 (삼성 인터넷 등) */
+      @media (prefers-color-scheme: dark) {
+        html, body { background: #eceae6 !important; color: #111 !important; forced-color-adjust: none; }
+        .phone, .screen, .card, .entry__card, .dialog { background: #fff !important; }
+        .day-bubble { color: #374151 !important; }
+        .day-bubble.has-event { background: rgba(62, 111, 224, 0.14) !important; color: var(--jae) !important; }
+        .day-bubble.selected { background: var(--selected) !important; color: #fff !important; }
+        .month-num, .day-header__label, .checklist__title { color: #111 !important; }
+      }
     </style>
   </head>
   <body>
@@ -477,16 +492,26 @@
         cells.forEach((d, i) => {
           if (i % 7 === 0) { row = document.createElement('div'); row.className = 'week-row'; grid.appendChild(row); }
           const cell = document.createElement('div');
-          cell.className = 'day-cell' + (d === null ? ' empty' : '');
+          const hasEvt = d !== null && eventDays.has(d);
+          const cellDate = d !== null ? new Date(year, mon, d) : null;
+          const isTodayCell = cellDate && isSameDay(cellDate, today);
+          const isSelectedCell = cellDate && isSameDay(cellDate, selectedDate);
+          cell.className = 'day-cell'
+            + (d === null ? ' empty' : '')
+            + (hasEvt && !isSelectedCell ? ' has-event-dot' : '')
+            + (isTodayCell && !isSelectedCell ? ' today-dot' : '')
+            + (isSelectedCell ? ' selected-dot' : '');
           if (d !== null) {
-            const cellDate = new Date(year, mon, d);
             const bubble = document.createElement('span');
             bubble.className = 'day-bubble' +
-              (eventDays.has(d) ? ' has-event' : '') +
-              (isSameDay(cellDate, today) ? ' today' : '') +
-              (isSameDay(cellDate, selectedDate) ? ' selected' : '');
+              (hasEvt ? ' has-event' : '') +
+              (isTodayCell ? ' today' : '') +
+              (isSelectedCell ? ' selected' : '');
             bubble.textContent = d;
             cell.appendChild(bubble);
+            const dot = document.createElement('span');
+            dot.className = 'day-dot';
+            cell.appendChild(dot);
             cell.addEventListener('click', () => { selectedDate = cellDate; openEntryIds.clear(); render(); });
           }
           row.appendChild(cell);
@@ -779,5 +804,5 @@
     </script>
   </body>
 
-<!-- CANARY:20260709-163555 -->
+<!-- CANARY:20260709-170000 -->
 </html>
