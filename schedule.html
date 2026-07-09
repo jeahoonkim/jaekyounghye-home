@@ -32,7 +32,10 @@
       @media (min-width: 480px) { .phone-outer { padding: 32px 10px; } }
       .phone { background: #fff; border-radius: 38px; box-shadow: var(--shadow-phone), 0 2px 10px rgba(17,24,39,.06); padding: 10px; }
       .screen { background: #fafafa; border-radius: 30px; overflow: hidden; border: 1px solid #f0f0f0; position: relative; }
-      .sync-indicator { position: absolute; top: 14px; right: 14px; z-index: 10; display: flex; align-items: center; gap: 5px; font-size: 10px; color: #6b7280; font-weight: 600; background: rgba(255,255,255,0.85); padding: 3px 8px; border-radius: 999px; backdrop-filter: blur(8px); }
+      .sync-row { display: flex; justify-content: center; padding: 10px 8px 2px; }
+      .sync-indicator { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; color: #6b7280; font-weight: 600; background: rgba(255,255,255,0.9); padding: 3px 10px; border-radius: 999px; border: 1px solid #ececec; }
+      .sync-indicator.error .sync-dot { background: #d9534f; }
+      .topbar { padding: 4px 18px 6px !important; }
       .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: #9ca3af; }
       .sync-indicator.cloud .sync-dot { background: #2F9C8B; }
       .sync-indicator.local .sync-dot { background: #E0683A; }
@@ -146,9 +149,11 @@
     <div class="phone-outer">
       <div class="phone">
         <div class="screen">
-          <div class="sync-indicator local" id="syncIndicator">
-            <span class="sync-dot"></span>
-            <span id="syncLabel">이 기기</span>
+          <div class="sync-row">
+            <div class="sync-indicator local" id="syncIndicator">
+              <span class="sync-dot"></span>
+              <span id="syncLabel">이 기기</span>
+            </div>
           </div>
           <div class="topbar">
             <a href="index.html" class="back-btn" aria-label="홈으로">
@@ -291,31 +296,41 @@
 
       const backend = { mode: 'local', db: null, firestore: null };
 
-      function setSyncIndicator(mode) {
+      function setSyncIndicator(mode, msg) {
         const ind = document.getElementById('syncIndicator');
         const lbl = document.getElementById('syncLabel');
-        ind.classList.remove('cloud','local');
+        ind.classList.remove('cloud','local','error');
         if (mode === 'firebase') { ind.classList.add('cloud'); lbl.textContent = '실시간 공유'; }
+        else if (mode === 'error') { ind.classList.add('error'); lbl.textContent = msg || '연결 오류'; }
         else { ind.classList.add('local'); lbl.textContent = '이 기기'; }
       }
 
       async function tryInitFirebase() {
         const cfg = window.FIREBASE_CONFIG;
-        if (!cfg || !cfg.projectId || cfg.projectId === 'PASTE_HERE' || cfg.apiKey === 'PASTE_HERE') return false;
+        if (!cfg) {
+          console.log('[Firebase] firebase-config.js 가 로드되지 않았어요. localStorage로 전환합니다.');
+          return false;
+        }
+        if (!cfg.projectId || cfg.projectId === 'PASTE_HERE' || cfg.apiKey === 'PASTE_HERE') {
+          console.log('[Firebase] firebase-config.js 의 PASTE_HERE 값을 채우지 않았어요. localStorage로 전환합니다.');
+          return false;
+        }
+        console.log('[Firebase] 초기화 시도 중... projectId =', cfg.projectId);
         try {
           const appMod = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
-          const fsMod = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+          const fsMod  = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
           const app = appMod.initializeApp(cfg);
           const db = fsMod.getFirestore(app);
-          try { await fsMod.enableIndexedDbPersistence(db); } catch (e) {}
           backend.mode = 'firebase';
           backend.db = db;
           backend.firestore = fsMod;
           subscribeFirestore();
           setSyncIndicator('firebase');
+          console.log('[Firebase] ✓ 연결 완료. 실시간 동기화 시작.');
           return true;
         } catch (e) {
-          console.warn('[Firebase] init failed, fallback to local', e);
+          console.error('[Firebase] 초기화 실패:', e);
+          setSyncIndicator('error', '연결 오류');
           return false;
         }
       }
@@ -330,14 +345,21 @@
             map[e.date].push(e);
           });
           cacheEntries = map;
+          console.log('[Firestore] entries 동기화:', Object.values(map).flat().length + '개');
           render();
-        }, (err) => console.warn('[Firestore] entries', err));
+        }, (err) => {
+          console.error('[Firestore] entries 구독 오류:', err.code, err.message);
+          setSyncIndicator('error', 'Firestore 미설정');
+        });
         onSnapshot(collection(backend.db, 'checklist'), (snap) => {
           const arr = [];
           snap.forEach(d => arr.push({ id: d.id, ...d.data() }));
           cacheChecks = arr;
+          console.log('[Firestore] checklist 동기화:', arr.length + '개');
           render();
-        }, (err) => console.warn('[Firestore] checklist', err));
+        }, (err) => {
+          console.error('[Firestore] checklist 구독 오류:', err.code, err.message);
+        });
       }
 
       function localLoadAll() {
@@ -616,8 +638,14 @@
           memo: document.getElementById('entryMemo').value.trim(),
           date: ymd(selectedDate),
         };
-        await saveEntryToBackend(entry);
+        // 다이얼로그 먼저 닫고, 저장은 백그라운드에서 (실패해도 화면 안 멈춤)
         closeEntryDialog();
+        try {
+          await saveEntryToBackend(entry);
+        } catch (e) {
+          console.error('[일정 저장 실패]', e);
+          alert('저장에 실패했어요: ' + (e?.message || e));
+        }
       }
       function openCheckDialog(existing) {
         editingCheckId = existing ? existing.id : null;
@@ -641,8 +669,14 @@
         } else {
           item = { id: uid(), label, who, due, done: false };
         }
-        await saveCheckToBackend(item);
+        // 다이얼로그 먼저 닫기 (저장 실패와 무관)
         closeCheckDialog();
+        try {
+          await saveCheckToBackend(item);
+        } catch (e) {
+          console.error('[할 일 저장 실패]', e);
+          alert('저장에 실패했어요: ' + (e?.message || e));
+        }
       }
 
       document.getElementById('prevMonth').addEventListener('click', () => { viewMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth()-1, 1); render(); });
